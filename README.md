@@ -31,7 +31,7 @@ Please use [our discord](https://discord.gg/vwMp5y25RX) to report any issues you
 Code Block to make the player jump:
 
 ```js
-f = api.setVelocity(myId, 0, 9, 0)
+api.setVelocity(myId, 0, 9, 0)
 ```
 
 Push the player
@@ -49,8 +49,8 @@ api.sendMessage(myId, "text", { color: "orange" })
 Create flying text:
 
 ```js
-const speed = 100
-api.sendFlyingMiddleMessage(myId, ["Message to display"], speed)
+const distance = 100
+api.sendFlyingMiddleMessage(myId, ["Message to display"], distance)
 ```
 
 Send a message to all players:
@@ -64,21 +64,21 @@ Set player health to 99, and print the old health:
 ```js
 const oldHealth = api.getHealth(myId)
 api.setHealth(myId, 99)
-api.log("Old Health:", oldHealth)
+api.log("Your old health was: ", oldHealth)
 ```
 
 Define a function to get the player IDs excluding your own ID:
 
 ```js
 getOtherIds = () => {
-    const ids = api.getPlayerIds()
-    const otherIds = []
-    for (const id of ids) {
-        if (id !== myId) {
-            otherIds.push(id)
-        }
+    const ids = api.getPlayerIds();
+    const isDifferentId = function(playerId) {
+        // returns true if playerId is not myId
+        return playerId !== myId
     }
-    return otherIds
+    // only retains values that are different from myId
+    return ids.filter(isDifferentId);
+}
 }
 ```
 
@@ -88,8 +88,8 @@ Use the function above to make other players look like zombies:
 for (const otherId of getOtherIds()) {
     api.setPlayerPose(otherId, "zombie")
     for (const part of ["head", "body", "legs"]) {
-        /* Notice the skin texture uses a capital Z */
-        api.changePlayerIntoSkin(otherId, part, "Zombie")
+        // Notice the skin texture uses a lowercase z
+        api.changePlayerIntoSkin(otherId, part, "zombie")
     }
 }
 ```
@@ -100,8 +100,8 @@ Make all players look like floating wizards:
 for (const playerId of api.getPlayerIds()) {
     api.setPlayerPose(playerId, "driving")
     for (const part of ["head", "body", "legs"]) {
-        /* Notice the skin texture uses a capital W */
-        api.changePlayerIntoSkin(playerId, part, "Wizard")
+        // Notice the skin texture uses a lowercase w
+        api.changePlayerIntoSkin(playerId, part, "wizard")
     }
 }
 ```
@@ -113,6 +113,7 @@ Global object `api` has the following methods:
 ```js
 /**
  * Get position of a player / entity.
+ *
  * @param {EntityId} entityId
  * @returns {[number, number, number]}
  */
@@ -120,6 +121,7 @@ getPosition(entityId)
 
 /**
  * Set position of a player / entity.
+ *
  * @param {EntityId} entityId
  * @param {number | number[]} x - Can also be an array, in which case y and z shouldn't be passed
  * @param {number} [y]
@@ -143,6 +145,8 @@ getPlayerIds()
 playerIsInGame(playerId)
 
 /**
+ * Whether a player is logged in (using Google etc)
+ *
  * @param {PlayerId} playerId
  * @returns {boolean}
  */
@@ -159,6 +163,7 @@ getPlayerPartyWhenJoined(playerId)
 
 /**
  * Get the number of players in the room
+ *
  * @returns {number}
  */
 getNumPlayers()
@@ -167,18 +172,19 @@ getNumPlayers()
  * Get the co-ordinates of the blocks the player is standing on as a list. For example, if the center of the player is at 0,0,0
  * this function will return [[0, -1, 0], [-1, -1, 0], [0, -1, -1], [-1, -1, -1]]
  * If the player is just standing on one block, the function would return e.g. [[0, 0, 0]]
- * If the player is middair then returns an empty list [].
+ * If the player is mid-air then this returns an empty list [].
  *
  * @param {PlayerId} playerId
- * @returns {number[][]}
+ * @returns {Array<[number, number, number]>}
  */
 getBlockCoordinatesPlayerStandingOn(playerId)
 
 /**
  * Get the types of block the player is standing on
+ *
  * For example, if a player is standing on 4 dirt blocks, this will return ["Dirt", "Dirt", "Dirt", "Dirt"]
  * @param {PlayerId} playerId
- * @returns {any[]}
+ * @returns {string[]}
  */
 getBlockTypesPlayerStandingOn(playerId)
 
@@ -187,12 +193,13 @@ getBlockTypesPlayerStandingOn(playerId)
  * (A lifeform is modelled as having four corners and can be in up to 3 blocks vertically)
  *
  * @param {LifeformId} lifeformId
- * @returns {number[][]} - List of x, y, z positions e.g. [[-1, 0, 0], [-1, 1, 0], [-1, 2, 0]]
+ * @returns {Array<[number, number, number]>} - List of x, y, z positions e.g. [[-1, 0, 0], [-1, 1, 0], [-1, 2, 0]]
  */
 getUnitCoordinatesLifeformWithin(lifeformId)
 
 /**
  * Show the shop tutorial for a player. Will not be shown if they have ever seen the shop tutorial in your game before.
+ *
  * @param {PlayerId} playerId
  * @returns {void}
  */
@@ -200,6 +207,7 @@ showShopTutorial(playerId)
 
 /**
  * Get the current shield of an entity.
+ *
  * @param {EntityId} entityId
  * @returns {number}
  */
@@ -216,12 +224,15 @@ setShieldAmount(lifeformId, newShieldAmount)
 
 /**
  * Get the current health of an entity.
+ *
  * @param {PlayerId} entityId
  * @returns {number}
  */
 getHealth(entityId)
 
 /**
+ * Apply a health change to an entity
+ *
  * @param {LifeformId} lifeformId
  * @param {number} changeAmount - Must be an integer. A positive amount will increase the entity's health. A negative amount will decrease the entity's shield first, then their health.
  * @param { LifeformId | { lifeformId: LifeformId; withItem: string } } [whoDidDamage] - Optional - If damage done by another player
@@ -305,7 +316,8 @@ attemptApplyDamage({
     })
 
 /**
- * Force respawn a player
+ * Force respawn a player if the player is dead.
+ *
  * @param {PlayerId} playerId
  * @param {number[]} [respawnPos]
  * @returns {void}
@@ -314,6 +326,7 @@ forceRespawn(playerId, respawnPos)
 
 /**
  * Kill a lifeform.
+ *
  * @param {LifeformId} lifeformId
  * @param { LifeformId | { lifeformId: LifeformId; withItem: string } } [whoKilled] - Optional
  * @returns {void}
@@ -321,7 +334,7 @@ forceRespawn(playerId, respawnPos)
 killLifeform(lifeformId, whoKilled)
 
 /**
- * Gets the player's current killstreak
+ * Get a player's current killstreak
  *
  * @param {PlayerId} playerId
  * @returns {number}
@@ -329,7 +342,7 @@ killLifeform(lifeformId, whoKilled)
 getCurrentKillstreak(playerId)
 
 /**
- * Clears the player's current killstreak
+ * Clear a player's current killstreak (set it to 0)
  *
  * @param {PlayerId} playerId
  * @returns {void}
@@ -337,7 +350,7 @@ getCurrentKillstreak(playerId)
 clearKillstreak(playerId)
 
 /**
- * Whether a lifeform is alive or dead (or on the respawn screen, in a player's case).
+ * Whether a lifeform is alive or dead (for players, "dead" means on the respawn screen).
  *
  * @param {LifeformId} lifeformId
  * @returns {boolean}
@@ -348,7 +361,7 @@ isAlive(lifeformId)
  * Send a message to everyone
  *
  * @param {string | CustomTextStyling} message - The text contained within the message. Can use `Custom Text Styling`.
- * @param { { fontWeight?: number | string; color?: string } } [style] - An optional style argument. Can contain values for fontWeight and color of the message.
+ * @param { { fontWeight?: number | string; color?: string } } [style] - An optional style argument if the first argument was a string. Can contain values for fontWeight and color of the message. Shorthand for `Custom Text Styling`
  * @returns {void}
  */
 broadcastMessage(message, style)
@@ -358,7 +371,7 @@ broadcastMessage(message, style)
  *
  * @param {PlayerId} playerId - Id of the player
  * @param {string | CustomTextStyling} message - The text contained within the message. Can use `Custom Text Styling`.
- * @param { { fontWeight?: number | string; color?: string } } [style] - An optional style argument. Can contain values for fontWeight and color of the message.
+ * @param { { fontWeight?: number | string; color?: string } } [style] - An optional style argument if the first argument was a string. Can contain values for fontWeight and color of the message. Shorthand for `Custom Text Styling`
  * @returns {void}
  */
 sendMessage(playerId, message, style)
@@ -368,16 +381,16 @@ sendMessage(playerId, message, style)
  *
  * @param {PlayerId} playerId - Id of the player
  * @param {CustomTextStyling} message - The text contained within the message. Can use `Custom Text Styling`.
- * @param {number} distanceFromAction - The distance from the action that has caused this message to be displayed, this value
+ * @param {number} distanceFromAction - The distance from the action that has caused this message to be displayed. Use 0 to make the message not move at all.
  * @returns {void}
  */
 sendFlyingMiddleMessage(playerId, message, distanceFromAction)
 
 /**
- * Modify a client option at runtime and send to the client if it changed
+ * Modify a client option
  *
  * @param {PlayerId} playerId
- * @param {PassedOption} option - The name of the option
+ * @param {PassedOption} option - The name of the option. E.g "RightInfoText" and "speedMultiplier"
  * @param {ClientOptions[PassedOption]} value - The new value of the option
  * @returns {void}
  */
@@ -387,22 +400,22 @@ setClientOption(playerId, option, value)
  * Returns the current value of a client option
  *
  * @param {PlayerId} playerId
- * @param {PassedOption} option
+ * @param {PassedOption} option - The name of the option. E.g "RightInfoText" and "speedMultiplier"
  * @returns {ClientOptions[PassedOption]}
  */
 getClientOption(playerId, option)
 
 /**
- * Modify client options at runtime
+ * Modify multiple client options at once
  *
  * @param {PlayerId} playerId
- * @param {Partial<ClientOptions>} optionsObj - An object which contains key value pairs of new settings. E.g {canChange: true, speedMultiplier: false}
+ * @param {Partial<ClientOptions>} optionsObj - An object which contains key value pairs of new settings. E.g {canChange: true, speedMultiplier: 3}
  * @returns {void}
  */
 setClientOptions(playerId, optionsObj)
 
 /**
- * Sets a client option to its default value. This will be the value stored in your game's defaultClientOptions, otherwise Bloxd's default.
+ * Resets a client option to its default value. This will be the value stored in your game's defaultClientOptions, otherwise Bloxd's default.
  *
  * @param {PlayerId} playerId
  * @param {ClientOption} option
@@ -412,9 +425,10 @@ setClientOptionToDefault(playerId, option)
 
 /**
  * Set every player's other-entity setting to a specific value for a particular player.
- * includeNewJoiners=true means that new players joining the game will also have this other player setting applied.
+ * For example `api.setTargetedPlayerSettingForEveryone(targetedPlayerId, "canSee", false, true)` will make targetedEntityId invisible
+ * includeNewJoiners = true means that new players joining the game will also have this OtherEntitySetting for targetedEntityId.
  *
- * @param {PlayerId} targetedPlayerId
+ * @param {PlayerId} targetedEntityId
  * @param {Setting} settingName
  * @param {OtherEntitySettings[Setting]} settingValue
  * @param {boolean} [includeNewJoiners]
@@ -424,7 +438,8 @@ setTargetedPlayerSettingForEveryone(targetedPlayerId, settingName, settingValue,
 
 /**
  * Set a player's other-entity setting for every player in the game.
- * includeNewJoiners=true means that the player will have the setting applied to new joiners.
+ * For example `api.setEveryoneSettingForPlayer(playerId, "canSee", false, true)` will make it so playerId can't see any player
+ * includeNewJoiners = true means that the playerId will have this OtherEntitySetting applied for all new joiners.
  *
  * @param {PlayerId} playerId
  * @param {Setting} settingName
@@ -436,6 +451,7 @@ setEveryoneSettingForPlayer(playerId, settingName, settingValue, includeNewJoine
 
 /**
  * Set a player's other-entity setting for a specific entity.
+ * For example `apisetOtherEntitySetting(relevantPlayerId, targetedEntityId, "canSee", false)` will make it so relevantPlayerId can't see targetedEntityId
  *
  * @param {PlayerId} relevantPlayerId
  * @param {EntityId} targetedEntityId
@@ -467,28 +483,31 @@ getOtherEntitySetting(relevantPlayerId, targetedEntityId, settingName)
 
 /**
  * Play particle effect on all clients, or only on some clients if clientPredictedBy is specified
- * @param {TempParticleSystemOpts} opts
+ *
+ * @param {TempParticleSystemOpts} opts - Check PARTICLES.md documentation for more info
  * @param {PlayerId} [clientPredictedBy] - Play only on clients where client with playerId clientPredictedBy
  * @returns {void}
  */
 playParticleEffect(opts, clientPredictedBy)
 
 /**
- * Get the in game name of an entity.
+ * Get the in-game name of an entity.
+ *
  * @param {EntityId} entityId
  * @returns {string}
  */
 getEntityName(entityId)
 
 /**
- * Given the name of a player, get their id
+ * Given the name of a player, get their id, which can change when player rejoins and across lobbies.
+ *
  * @param {string} playerName
  * @returns {PNull<PlayerId>}
  */
 getPlayerId(playerName)
 
 /**
- * Given a player, get their permanent identifier that doesn't change when leaving and re-entering
+ * Given a player, get their permanent 21-character database identifier that doesn't change when leaving and re-entering, and is the same for all lobbies.
  *
  * @param {PlayerId} playerId
  * @returns {PlayerDbId}
@@ -496,7 +515,7 @@ getPlayerId(playerName)
 getPlayerDbId(playerId)
 
 /**
- * Returns null if player not in lobby
+ * Given the dbId of a player, get their id. Returns null if player not in lobby
  *
  * @param {PlayerDbId} dbId
  * @returns {PNull<PlayerId>}
@@ -504,14 +523,18 @@ getPlayerDbId(playerId)
 getPlayerIdFromDbId(dbId)
 
 /**
- * @param {PlayerId} playerId
- * @param {string} reason
+ * Kick a player.
+ * If a player is the lobby owner and has joined less than 15 seconds ago, they will not be kicked. This is to reduce chances of losing a world due to a script that kicks all player on join.
+ *
+ * @param {PlayerId} playerId - id of the player kicked
+ * @param {string} reason - message to be displayed when player is kicked
  * @returns {void}
  */
 kickPlayer(playerId, reason)
 
 /**
  * Check if the block at a specific position is in a loaded chunk.
+ *
  * @param {number} x
  * @param {number} y
  * @param {number} z
@@ -520,7 +543,8 @@ kickPlayer(playerId, reason)
 isBlockInLoadedChunk(x, y, z)
 
 /**
- * Get the name of a block.
+ * Get the name of a block. If block is in an unloaded chunk, this will load the chunk within a few ticks.
+ *
  * @param {number | number[]} x - could be an array [x, y, z]. If so, the other params shouldn't be passed.
  * @param {number} [y]
  * @param {number} [z]
@@ -530,7 +554,7 @@ getBlock(x, y, z)
 
 /**
  * Used to get the block id at a specific position.
- * Intended only for use in hot code paths - default to getBlock for most use cases
+ * Intended only for use in frequently accessed code paths - use getBlock for most use cases
  *
  * @param {number} x
  * @param {number} y
@@ -541,10 +565,12 @@ getBlockId(x, y, z)
 
 /**
  * Set a block. Valid names are those either contained in blockMetadata.ts or are 'Air'
+ * Doesn't work for unloaded chunks. Use getBlock to load them first.
+ * Also accepts blockIds, but for 'Air' you must pass 'Air'.
  *
- * This function is optimised for setting broad swathes of blocks. For example, if you have a 50x50x50 area you need to turn to air, it will run performantly if you call this in double nested loops.
+ * This function is optimised for setting broad swathes of blocks. For example, if you have a 50x50x50 area you need to turn to Air, it will run performantly if you call this in double nested loops.
  *
- * @param {number | number[]} x - Can be an array
+ * @param {number | number[]} x - could be an array [x, y, z].
  * @param {number | BlockName} y - Should be blockname if first param is array
  * @param {number} [z]
  * @param {BlockName} [blockName]
@@ -554,7 +580,7 @@ setBlock(x, y, z, blockName)
 
 /**
  * Initiate a block change "by the world".
- * This ends up calling the onWorldChangeBlock and only makes the change if not prevented by game/plugins.
+ * This ends up calling the onWorldChangeBlock callback and only makes the change if not prevented by game/plugins.
  * initiatorDbId is null if the change was initiated by the game code.
  *
  * @param {PNull<PlayerDbId>} initiatorDbId
@@ -569,8 +595,8 @@ attemptWorldChangeBlock(initiatorDbId, x, y, z, blockName, extraInfo)
 
 /**
  * Returns whether a block is solid or not.
- * E.g. Grass block is solid, while water, ladder and water are not.
- * Will be true if the block is unloaded.
+ * E.g. 'Grass Block' is solid, while 'Water', 'Maple Ladder' and 'Air' are not.
+ * Returns true if the block is unloaded.
  *
  * @param {number | number[]} x
  * @param {number} [y]
@@ -580,7 +606,7 @@ attemptWorldChangeBlock(initiatorDbId, x, y, z, blockName, extraInfo)
 getBlockSolidity(x, y, z)
 
 /**
- * Helper function that sets all blocks in a rectangle to a specific block.
+ * Helper function that sets all blocks in a rectangle to a specific block by providing two opposite corners of the cuboid.
  *
  * @param {number[]} pos1 - array [x, y, z]
  * @param {number[]} pos2 - array [x, y, z]
@@ -602,13 +628,15 @@ setBlockRect(pos1, pos2, blockName)
 setBlockWalls(pos1, pos2, blockName, hasFloor, hasCeiling)
 
 /**
+ * Note: This doesn't work at the moment due to Array size limits.
+ *
  * Only use this instead of getBlock if you REALLY need the performance (i.e. you are iterating over tens of thousands of blocks)
  * ReturnedObject.blockData is a 32x32x32 ndarray of block ids
  * (see https://www.npmjs.com/package/ndarray)
  * Each block id is a 16-bit number
  * The ndarray should only be read from, writing to it will result in desync between the server and client
  *
- * @param {number[]} pos - The returned chunk contains pos
+ * @param {number[]} pos - A block position inside the chunk. The returned chunk contains this pos.
  * @returns {PNull<GameChunk>} - null if the chunk is not loaded in a persisted world. ReturnedObject.blockData is an ndarray that can be accessed
  */
 getChunk(pos)
@@ -633,9 +661,7 @@ getEmptyChunk()
 getMetaInfo(blockName)
 
 /**
- * Get the numeric id of a block used in the ndarrays returned from getChunk
- * I.e. chunk.blockData.set(x, y, z, api.blockNameToBlockId("Dirt"))
- * or chunk.blockData.get(x, y, z) === api.blockNameToBlockId("Dirt")
+ * Goes from block name to block id.
  *
  * @param {string} blockName
  * @param {boolean} [allowInvalidBlock] - Don't throw an error if the block name is invalid.
@@ -652,7 +678,7 @@ blockNameToBlockId(blockName, allowInvalidBlock)
 blockIdToBlockName(blockId)
 
 /**
- * Get the unique id of the chunk containing pos in the current map
+ * Get the unique id of the chunk containing pos
  *
  * @param {number[]} pos
  * @returns {string}
@@ -660,7 +686,7 @@ blockIdToBlockName(blockId)
 blockCoordToChunkId(pos)
 
 /**
- * Get the co-ordinates of the block in the chunk with the lowest x, y, and z co-ordinates
+ * Get the coordinates of the block in the chunk with the lowest x, y, and z co-ordinates given the chunk id
  *
  * @param {string} chunkId
  * @returns {[number, number, number]}
@@ -691,6 +717,7 @@ sendTopRightHelper(playerId, icon, text, opts)
 
 /**
  * Whether the player is on a mobile device or a computer.
+ *
  * @param {PlayerId} playerId
  * @returns {boolean}
  */
@@ -698,6 +725,7 @@ isMobile(playerId)
 
 /**
  * Create a dropped item.
+ *
  * @param {number} x
  * @param {number} y
  * @param {number} z
@@ -706,7 +734,7 @@ isMobile(playerId)
  * @param {boolean} [mergeItems] - Whether to merge the item into an nearby item of same type, if one exists. Defaults to false.
  * @param {ItemAttributes} [attributes] - Attributes of the item being dropped
  * @param {number} [timeTillDespawn] - Time till the item automatically despawns in milliseconds. Max of 5 mins.
- * @returns {PNull<EntityId>} - the id you can pass to setCantPickUpItem, or null if the item drop limit was reached
+ * @returns {PNull<EntityId>} - the itemId that you can pass to setCantPickUpItem, or null if the item drop limit was reached
  */
 createItemDrop(x, y, z, itemName, amount, mergeItems, attributes, timeTillDespawn)
 
@@ -720,7 +748,7 @@ createItemDrop(x, y, z, itemName, amount, mergeItems, attributes, timeTillDespaw
 setCantPickUpItem(playerId, itemId)
 
 /**
- * Delete an item drop by item drop entity ID
+ * Delete an item drop given the itemId
  *
  * @param {EntityId} itemId
  * @returns {void}
@@ -741,7 +769,7 @@ getInitialItemMetadata(itemName)
  * Either based on a client option for a player: (e.g. `DirtTtb`)
  * or its entry in blockMetadata.ts or nonBlockMetadata in itemMetadata.ts if no client option is set.
  *
- * If null is passed for lifeformId, this is simply its entry in blockMetadata etc.
+ * If null is passed for lifeformId, this is simply its entry in blockMetadata or itemMetadata
  *
  * @param {PNull<LifeformId>} lifeformId
  * @param {string} itemName
@@ -761,7 +789,7 @@ setCameraDirection(playerId, direction)
 
 /**
  * Set a player's opacity
- * A simple helper that calls setTargetedPlayerSettingForEveryone
+ * A simple helper that calls setTargetedPlayerSettingForEveryone using opacity
  *
  * @param {PlayerId} playerId
  * @param {number} opacity
@@ -771,7 +799,7 @@ setPlayerOpacity(playerId, opacity)
 
 /**
  * Set the level of viewable opacity by one player on another player
- * A simple helper that calls setOtherEntitySetting
+ * A simple helper that calls setOtherEntitySetting using opacity
  *
  * @param {PlayerId} playerIdWhoViewsOpacityPlayer - The player who sees that with opacity
  * @param {PlayerId} playerIdOfOpacityPlayer - The player/player model who is given opacity
@@ -782,6 +810,7 @@ setPlayerOpacityForOnePlayer(playerIdWhoViewsOpacityPlayer, playerIdOfOpacityPla
 
 /**
  * Obtain Date.now() value saved at start of current game tick
+ *
  * @returns {number}
  */
 now()
@@ -798,9 +827,9 @@ now()
 checkValid(entityId)
 
 /**
- * Let a player change a block at a specific co-ordinate. Useful when client option canChange is false.
+ * Let a player change a block at a specific coordinate. Useful when client option canChange is false.
  * Overrides blockRect and blockType settings, so also useful when you have disallowed changing of a block type with setCantChangeBlockType.
- * Using this on 1000s of blocks will cause lag - if that is needed, find a way to use setCanChangeBlockType.
+ * Using this on 1000s of blocks will cause lag - if that is needed, use setCanChangeBlockRect.
  *
  * @param {PlayerId} playerId
  * @param {number} x
@@ -811,9 +840,9 @@ checkValid(entityId)
 setCanChangeBlock(playerId, x, y, z)
 
 /**
- * Prevents a player from changing a block at a specific co-ordinate. Useful when client option canChange is true.
+ * Prevents a player from changing a block at a specific coordinate. Useful when client option canChange is true.
  * Overrides blockRect and blockType settings, so also useful when you have allowed changing of a block type with setCantChangeBlockType.
- * Using this on 1000s of blocks will cause lag - if that is needed, find a way to use setCantChangeBlockType.
+ * Using this on 1000s of blocks will cause lag - if that is needed, use setCantChangeBlockRect.
  *
  * @param {PlayerId} playerId
  * @param {number} x
@@ -834,7 +863,7 @@ setCantChangeBlock(playerId, x, y, z)
 setCanChangeBlockType(playerId, blockName)
 
 /**
- * Stops a player from Changeing a block type. Valid names are those contained within blockMetadata.ts and 'Air'
+ * Stops a player from Changing a block type. Valid names are those contained within blockMetadata.ts and 'Air'
  * Less priority than can change block pos/can change block rect
  *
  * @param {PlayerId} playerId
@@ -905,13 +934,13 @@ setWalkThroughType(playerId, blockName, disable)
  * @param {PlayerId} playerId
  * @param {number[]} pos1 - The one corner of the cuboid. Format [x, y, z]
  * @param {number[]} pos2 - The top right corner of the cuboid. Format [x, y, z]
- * @param {WalkThroughType} updateType - The type of update. Whether to make a rect solid, or able to be walked through.
+ * @param {WalkThroughType} updateType - The type of update. Whether to make a rect solid, able to be walked through, or reset to default.
  * @returns {void}
  */
 setWalkThroughRect(playerId, pos1, pos2, updateType)
 
 /**
- * Give a player an item and a certain amount of that item.
+ * Give a player a certain amount of an item.
  * Returns the amount of item added to the users inventory.
  *
  * @param {PlayerId} playerId
@@ -924,6 +953,7 @@ giveItem(playerId, itemName, itemAmount, attributes)
 
 /**
  * Whether the player has space in their inventory to get new blocks
+ *
  * @param {PlayerId} playerId
  * @returns {boolean}
  */
@@ -936,8 +966,8 @@ inventoryIsFull(playerId)
  * @param {number} itemSlotIndex - 0-indexed
  * @param {string} itemName - Can be 'Air', in which case itemAmount will be ignored and the slot will be cleared.
  * @param {PNull<number>} [itemAmount] - -1 for infinity. Should not be set, or null, for items that are not stackable.
- * @param {ItemAttributes} [attributes] - An optional object for certain types of item. For guns this can contain the shotsLeft field which is the amount of ammo the gun currently has.
- * @param {boolean} [tellClient] - whether to tell client about it - results in desync between client and server if client doesnt locally perform the same action
+ * @param {ItemAttributes} [attributes] - An optional object for certain types of item. For guns this can contain the shotsLeft field which is the amount of ammo the gun has.
+ * @param {boolean} [tellClient] - whether to tell client about it - results in desync between client and server if client doesnt locally perform the same action.
  * @returns {void}
  */
 setItemSlot(playerId, itemSlotIndex, itemName, itemAmount, attributes, tellClient)
@@ -983,7 +1013,7 @@ hasItem(playerId, itemName)
 getInventoryItemAmount(playerId, itemName)
 
 /**
- * Clear the players inventory
+ * Clear a player's inventory
  *
  * @param {PlayerId} playerId
  * @returns {void}
@@ -991,7 +1021,7 @@ getInventoryItemAmount(playerId, itemName)
 clearInventory(playerId)
 
 /**
- * Force the player to have the ith inventory slot selected. E.g. newI 0 makes the player have the 0th inventory slot selected
+ * Change a player's selected hotbar slot
  *
  * @param {PlayerId} playerId
  * @param {number} newI - integer from 0-9
@@ -1000,9 +1030,10 @@ clearInventory(playerId)
 setSelectedInventorySlotI(playerId, newI)
 
 /**
- * Get a player's currently selected inventory slot
+ * Get a player's currently selected hotbar slot
+ *
  * @param {PlayerId} playerId
- * @returns {number}
+ * @returns {number} slotI - integer from 0-9
  */
 getSelectedInventorySlotI(playerId)
 
@@ -1017,7 +1048,7 @@ getSelectedInventorySlotI(playerId)
 getHeldItem(playerId)
 
 /**
- * Get the amount of free slots in a player's inventory.
+ * Get the amount of empty slots in a player's inventory. Maximum 36.
  *
  * @param {PlayerId} playerId
  * @returns {number} - number
@@ -1051,7 +1082,7 @@ canOpenStandardChest(playerId, chestX, chestY, chestZ)
 giveStandardChestItem(chestPos, itemName, itemAmount, playerId, attributes)
 
 /**
- * Get the amount of free slots in a standard chest
+ * Get the amount of empty slots in a standard chest
  * Returns null for non-chests
  *
  * @param {number[]} chestPos
@@ -1090,7 +1121,7 @@ getStandardChestItems(chestPos)
  * @param {number[]} chestPos
  * @param {number} idx - 0-indexed
  * @param {string} itemName - Can be 'Air', in which case itemAmount will be ignored and the slot will be cleared.
- * @param {number} [itemAmount] - -1 for infinity. Should not be set, or null, for items that are not stackable.
+ * @param {number} [itemAmount] - -1 for infinity. Should not be set, or null, for items that are not stackable (or use 1).
  * @param {PlayerId} [playerId] - The player who is interacting with the chest.
  * @param {ItemAttributes} [attributes] - An optional object for certain types of item. For guns this can contain the shotsLeft field which is the amount of ammo the gun currently has.
  * @returns {void}
@@ -1119,6 +1150,7 @@ getMoonstoneChestItemSlot(playerId, idx)
 getMoonstoneChestItems(playerId)
 
 /**
+ * Set a slot in a player's moonstone chest to an item.
  * Moonstone chests are a type of chest where a player accesses the same contents no matter the location of the moonstone chest
  *
  * @param {PlayerId} playerId
@@ -1134,6 +1166,7 @@ setMoonstoneChestItemSlot(playerId, idx, itemName, itemAmount, metadata)
  * Store data about a block in a performant manner. Data is cleared when block changes.
  * E.g. chest
  * Works well with blocks marked tickable (e.g. wheat)
+ * Has a limit of 40000 new characters allocated for memory per minute. That is about 33.33 characters per tick.
  *
  * @param {number} x
  * @param {number} y
@@ -1157,18 +1190,21 @@ getBlockData(x, y, z)
 
 /**
  * Get the name of the lobby this game is running in.
+ *
  * @returns {PNull<string>}
  */
 getLobbyName()
 
 /**
  * Integer lobby names are public
+ *
  * @returns {boolean} - boolean
  */
 isPublicLobby()
 
 /**
- * Returns if the current lobby the game is running in is special - e.g. a discord guild or dm, or simply a standard lobby
+ * Returns whether the current lobby the game is running in is special - e.g. a discord guild or dm, or simply a standard lobby
+ *
  * @returns {LobbyType}
  */
 getLobbyType()
@@ -1238,7 +1274,7 @@ removeItemCraftingRecipes(playerId, itemName)
  * @param {number[]} coordsToCheck
  * @param {number[]} pos1 - position of one corner
  * @param {number[]} pos2 - position of opposite corner
- * @param {boolean} [addOneToMax]
+ * @param {boolean} [addOneToMax] - Whether to add 1 to the max x, y, z
  * @returns {boolean}
  */
 isInsideRect(coordsToCheck, pos1, pos2, addOneToMax)
@@ -1253,6 +1289,8 @@ isInsideRect(coordsToCheck, pos1, pos2, addOneToMax)
 getEntitiesInRect(minCoords, maxCoords)
 
 /**
+ * Get the type of an entity. E.g. Player, Item, Pig, Cow, Arrow
+ *
  * @param {EntityId} entityId
  * @returns {EntityType}
  */
@@ -1260,12 +1298,14 @@ getEntityType(entityId)
 
 /**
  * Create a mob herd. A mob herd represents a collection of mobs that move together.
+ *
  * @returns {MobHerdId}
  */
 createMobHerd()
 
 /**
  * Try to spawn a mob into the world at a given position. Returns null on failure.
+ *
  * WARNING: Either the "onPlayerAttemptSpawnMob" or the "onWorldAttemptSpawnMob" game callback will be called
  * depending on whether "spawnerId" is provided. Calling this function inside those callbacks risks infinite recursion.
  * @param {TMobType} mobType
@@ -1286,14 +1326,15 @@ attemptSpawnMob(mobType, x, y, z, opts)
 
 /**
  * Dispose of a mob's state and remove them from the world without triggering "on death" flows.
- * Always succeeds.
+ * Always succeeds, unlike attemptSpawnMob.
+ *
  * @param {MobId} mobId
  * @returns {void}
  */
 despawnMob(mobId)
 
 /**
- * Returns the current default value for a mob setting.
+ * Get the current default value for a mob setting.
  *
  * @param {TMobType} mobType
  * @param {TMobSetting} setting
@@ -1303,6 +1344,7 @@ getDefaultMobSetting(mobType, setting)
 
 /**
  * Set the default value for a mob setting.
+ *
  * @param {TMobType} mobType
  * @param {TMobSetting} setting
  * @param {MobSettings<TMobType>[TMobSetting]} value
@@ -1312,6 +1354,7 @@ setDefaultMobSetting(mobType, setting, value)
 
 /**
  * Get the current value of a mob setting for a specific mob.
+ *
  * @param {MobId} mobId
  * @param {TMobSetting} setting
  * @returns {MobSettings<MobType>[TMobSetting]}
@@ -1320,6 +1363,7 @@ getMobSetting(mobId, setting)
 
 /**
  * Set the current value of a mob setting for a specific mob.
+ *
  * @param {MobId} mobId
  * @param {TMobSetting} setting
  * @param {MobSettings<MobType>[TMobSetting]} value
@@ -1329,12 +1373,14 @@ setMobSetting(mobId, setting, value)
 
 /**
  * Get the number of mobs in the world.
+ *
  * @returns {number}
  */
 getNumMobs()
 
 /**
  * Get the mob IDs of all mobs in the world.
+ *
  * @returns {MobId[]}
  */
 getMobIds()
@@ -1371,7 +1417,7 @@ setVelocity(eId, x, y, z)
 setEntityHeading(entityId, newHeading)
 
 /**
- * Set the amount of an item in an item entity
+ * Change item amount in a dropped item
  *
  * @param {EntityId} itemId
  * @param {number} newAmount
@@ -1385,7 +1431,7 @@ setItemAmount(itemId, newAmount)
  * softMaxPlayers is the number of players that matchmaking will route to using "Quick Play".
  * Once the softMaxPlayers limit is reached, this lobby can only be joined by requesting the lobby name or joining a friend.
  *
- * maxPlayers is the absolute maximum: a lobby will not have more players than this.
+ * maxPlayers is the absolute maximum: a lobby cannot have more players than this.
  * Tip: softMaxPlayers should be around 90% of maxPlayers
  *
  * WARNING: This change is not immediate, as it takes a while for matchmaking to find out.
